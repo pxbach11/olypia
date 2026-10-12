@@ -1,0 +1,498 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Đường lên đỉnh Olympia – Bộ máy Golgi</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@400;500;600;800&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg1: #04262b;
+    --bg2: #021518;
+    --panel: #08414a;
+    --edge: #1f8f94;
+    --golgi: #ff86b8;
+    --golgi-soft: #ffc2dc;
+    --golgi-dark: #b3507c;
+    --ink: #eafcfb;
+    --dim: #9fd0cf;
+    --ok: #b6f06a;
+    --bad: #ff6b5e;
+    --font: "Be Vietnam Pro", "Segoe UI", Roboto, Arial, sans-serif;
+    box-sizing: border-box;
+    padding-top: env(safe-area-inset-top, 0px);
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) { --bg1: #04262b; --bg2: #021518; }
+  }
+  :root[data-theme="dark"] { --bg1: #04262b; --bg2: #021518; }
+  html { height: 100%; scroll-padding-top: env(safe-area-inset-top, 0px); }
+  *, *::before, *::after { box-sizing: border-box; }
+  body {
+    margin: 0; min-height: 100%;
+    font-family: var(--font);
+    color: var(--ink);
+    background-color: var(--bg2);
+    background-image:
+      radial-gradient(circle, rgba(255,255,255,.07) 1.5px, transparent 2.2px),
+      radial-gradient(110% 65% at 50% -10%, #0e6a71 0%, transparent 62%),
+      linear-gradient(180deg, var(--bg1) 0%, var(--bg2) 100%);
+    background-size: 30px 30px, auto, auto;
+    background-attachment: fixed;
+    line-height: 1.5;
+  }
+  button { font-family: inherit; color: inherit; cursor: pointer; }
+  :focus-visible { outline: 3px solid var(--golgi); outline-offset: 3px; }
+
+  .app { max-width: 880px; margin: 0 auto; padding: 20px 16px 48px; }
+
+  /* ---------- hành trình của protein ---------- */
+  .climb { margin: 4px 0 22px; }
+  .climb-track { display: flex; align-items: center; }
+  .node {
+    width: 26px; height: 26px; border-radius: 50%; flex: none;
+    border: 2px solid var(--edge); background: var(--bg1);
+    display: grid; place-items: center; font-size: 11px; font-weight: 800; color: var(--dim);
+    transition: background .3s, border-color .3s, transform .3s;
+  }
+  .node.now { border-color: var(--golgi); color: var(--golgi); transform: scale(1.25); box-shadow: 0 0 0 4px rgba(255,134,184,.2); }
+  .node.right { background: var(--ok); border-color: var(--ok); color: #1b2f05; }
+  .node.wrong { background: var(--bad); border-color: var(--bad); color: #340905; }
+  .link { flex: 1; height: 3px; background: var(--edge); min-width: 4px; }
+  .link.gap { background: repeating-linear-gradient(90deg, var(--golgi) 0 6px, transparent 6px 12px); }
+  .climb-labels { display: flex; justify-content: space-between; font-size: 12px; color: var(--dim); margin-top: 8px; gap: 12px; }
+  .climb-labels .end { text-align: right; }
+
+  /* ---------- sân khấu: bào tương ---------- */
+  .stage {
+    background: linear-gradient(180deg, rgba(10,90,98,.55), rgba(4,38,43,.88));
+    border: 2px solid var(--edge);
+    border-radius: 28px;
+    padding: 28px 24px;
+    box-shadow: 0 0 0 6px rgba(31,143,148,.18), 0 22px 60px rgba(0,0,0,.45);
+  }
+  .screen[hidden] { display: none; }
+
+  h1 { font-size: clamp(30px, 6vw, 50px); line-height: 1.1; font-weight: 800; margin: 0 0 14px; letter-spacing: -0.01em; }
+  h2 { font-size: clamp(22px, 4vw, 32px); font-weight: 800; margin: 0 0 8px; }
+  .gold { color: var(--golgi); }
+  .lead { color: var(--dim); font-size: 17px; max-width: 60ch; margin: 0 0 22px; }
+
+  .hero { display: grid; grid-template-columns: 1fr minmax(160px, 250px); gap: 22px; align-items: center; margin-bottom: 8px; }
+  .hero svg { width: 100%; height: auto; }
+  .cis { fill: none; stroke: var(--golgi); stroke-linecap: round; }
+  .ves { fill: var(--golgi-soft); stroke: var(--golgi); stroke-width: 2; }
+  .ves.er { fill: #7fd6da; stroke: #1f8f94; }
+  .cap { font-size: 10px; fill: var(--dim); font-family: var(--font); }
+
+  .rounds { list-style: none; padding: 0; margin: 0 0 26px; display: grid; gap: 10px; }
+  .rounds li {
+    display: grid; grid-template-columns: 1fr auto; gap: 4px 14px; align-items: center;
+    padding: 12px 16px; border: 1px solid var(--edge); border-radius: 16px; background: rgba(2,21,24,.5);
+  }
+  .rounds .r-name { font-weight: 800; }
+  .rounds .r-desc { grid-column: 1 / -1; color: var(--dim); font-size: 14px; }
+  .rounds .r-count { color: var(--golgi); font-weight: 800; white-space: nowrap; }
+
+  .btn {
+    border: 0; border-radius: 999px; padding: 14px 30px; font-weight: 800; font-size: 17px;
+    background: linear-gradient(180deg, var(--golgi-soft), var(--golgi)); color: #3a0620;
+    box-shadow: 0 6px 0 var(--golgi-dark), 0 12px 24px rgba(0,0,0,.35);
+    transition: transform .1s, box-shadow .1s;
+  }
+  .btn:active { transform: translateY(4px); box-shadow: 0 2px 0 var(--golgi-dark); }
+
+  /* ---------- câu hỏi ---------- */
+  .q-top { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 18px; }
+  .q-tag { font-weight: 800; color: var(--golgi); }
+  .q-sub { color: var(--dim); font-size: 14px; }
+  .score-box { text-align: right; }
+  .score-box b { display: block; font-size: 28px; line-height: 1; color: var(--golgi); }
+  .score-box span { font-size: 12px; color: var(--dim); }
+
+  .q-text { font-size: clamp(19px, 3.4vw, 26px); font-weight: 600; line-height: 1.35; margin: 0 0 22px; }
+
+  .options { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+  .opt {
+    display: grid; grid-template-columns: auto 1fr; gap: 12px; align-items: center; text-align: left;
+    padding: 14px 16px; border-radius: 18px; font-size: 16px; font-weight: 500;
+    background: rgba(2,21,24,.6); border: 2px solid var(--edge);
+    transition: border-color .15s, background .15s, transform .15s;
+  }
+  .opt .letter {
+    width: 34px; height: 34px; border-radius: 50%; display: grid; place-items: center;
+    font-weight: 800; background: var(--edge); color: var(--ink);
+  }
+  .opt:hover:not(:disabled) { border-color: var(--golgi); transform: translateY(-2px); }
+  .opt:disabled { cursor: default; }
+  .opt.correct { border-color: var(--ok); background: rgba(182,240,106,.16); }
+  .opt.correct .letter { background: var(--ok); color: #1b2f05; }
+  .opt.incorrect { border-color: var(--bad); background: rgba(255,107,94,.16); }
+  .opt.incorrect .letter { background: var(--bad); color: #340905; }
+  .opt.dim { opacity: .5; }
+
+  .feedback { margin-top: 20px; padding: 16px 18px; border-radius: 16px; background: rgba(2,21,24,.65); border-left: 6px solid var(--golgi); }
+  .feedback.ok { border-left-color: var(--ok); }
+  .feedback.no { border-left-color: var(--bad); }
+  .feedback strong { display: block; font-size: 18px; margin-bottom: 4px; }
+  .feedback p { margin: 0 0 14px; color: var(--dim); }
+
+  /* ---------- chọn mức điểm Về đích ---------- */
+  .levels { display: grid; grid-template-columns: repeat(3, 1fr); gap: 14px; margin: 22px 0 6px; }
+  .level {
+    padding: 22px 10px; border-radius: 22px; border: 2px solid var(--golgi); background: rgba(2,21,24,.6);
+    font-weight: 800; font-size: 34px; color: var(--golgi); text-align: center; line-height: 1.1;
+    transition: transform .15s, background .15s;
+  }
+  .level small { display: block; font-size: 13px; font-weight: 500; color: var(--dim); margin-top: 6px; }
+  .level:hover:not(:disabled) { transform: translateY(-3px); background: rgba(255,134,184,.12); }
+  .level:disabled { opacity: .3; border-color: var(--edge); color: var(--dim); cursor: default; }
+
+  /* ---------- kết quả ---------- */
+  .final-score { font-size: clamp(64px, 16vw, 120px); font-weight: 800; line-height: 1; color: var(--golgi); margin: 6px 0; }
+  .final-score small { font-size: .3em; color: var(--dim); font-weight: 600; }
+  .review { list-style: none; padding: 0; margin: 22px 0; display: grid; gap: 8px; }
+  .review li { display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: start; padding: 10px 14px; border-radius: 14px; background: rgba(2,21,24,.55); font-size: 15px; }
+  .review .mk { font-weight: 800; }
+  .review .mk.ok { color: var(--ok); }
+  .review .mk.no { color: var(--bad); }
+  .review .pt { color: var(--golgi); font-weight: 800; white-space: nowrap; }
+
+  @media (max-width: 620px) {
+    .stage { padding: 20px 14px; }
+    .hero { grid-template-columns: 1fr; }
+    .hero svg { max-width: 220px; margin: 0 auto; order: -1; }
+    .options { grid-template-columns: 1fr; }
+    .node { width: 22px; height: 22px; font-size: 10px; }
+    .levels { gap: 8px; }
+    .level { font-size: 26px; padding: 18px 6px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { transition: none !important; animation: none !important; }
+  }
+</style>
+</head>
+<body>
+<main class="app">
+
+  <div class="climb" id="climb" hidden>
+    <div class="climb-track" id="climbTrack"></div>
+    <div class="climb-labels"><span>Lưới nội chất hạt</span><span class="end">Màng tế bào</span></div>
+  </div>
+
+  <section class="stage">
+
+    <!-- Màn hình mở đầu -->
+    <div class="screen" id="sIntro">
+      <div class="hero">
+        <div>
+          <h1>Đường lên đỉnh <span class="gold">Olympia</span><br>Bộ máy Golgi</h1>
+          <p class="lead">Mười câu hỏi theo hành trình của một phân tử protein: từ lưới nội chất hạt, qua bộ máy Golgi, rồi ra tới màng tế bào.</p>
+        </div>
+        <svg viewBox="0 0 250 220" role="img" aria-label="Hình minh họa bộ máy Golgi gồm các túi dẹp xếp song song, có túi vận chuyển ở hai phía">
+          <path class="cis" d="M52 46 Q125 22 198 46" stroke-width="13"/>
+          <path class="cis" d="M44 78 Q125 52 206 78" stroke-width="13"/>
+          <path class="cis" d="M40 110 Q125 82 210 110" stroke-width="13"/>
+          <path class="cis" d="M44 142 Q125 114 206 142" stroke-width="13"/>
+          <path class="cis" d="M52 174 Q125 146 198 174" stroke-width="13"/>
+          <circle class="ves er" cx="14" cy="92" r="7"/>
+          <circle class="ves er" cx="18" cy="128" r="5"/>
+          <circle class="ves" cx="236" cy="70" r="9"/>
+          <circle class="ves" cx="240" cy="112" r="6"/>
+          <circle class="ves" cx="232" cy="150" r="8"/>
+          <text class="cap" x="4" y="205">Mặt nhận</text>
+          <text class="cap" x="176" y="205">Mặt xuất</text>
+        </svg>
+      </div>
+      <ul class="rounds">
+        <li><span class="r-name">Khởi động</span><span class="r-count">4 câu</span><span class="r-desc">Nhận biết cấu trúc và chức năng. Đúng được 10 điểm mỗi câu.</span></li>
+        <li><span class="r-name">Tăng tốc</span><span class="r-count">3 câu</span><span class="r-desc">Hiểu con đường vận chuyển và glycoprotein. Đúng được 20 điểm mỗi câu.</span></li>
+        <li><span class="r-name">Về đích</span><span class="r-count">3 câu</span><span class="r-desc">Tự chọn mức 10, 20 hoặc 30 điểm. Mỗi mức dùng một lần, mức cao thì câu khó hơn.</span></li>
+      </ul>
+      <button class="btn" id="btnStart">Bắt đầu thi</button>
+    </div>
+
+    <!-- Giới thiệu vòng -->
+    <div class="screen" id="sRound" hidden>
+      <h2 id="rTitle"></h2>
+      <p class="lead" id="rDesc"></p>
+      <button class="btn" id="btnRoundGo">Sẵn sàng</button>
+    </div>
+
+    <!-- Chọn mức điểm -->
+    <div class="screen" id="sLevel" hidden>
+      <h2>Chọn mức điểm</h2>
+      <p class="lead">Mỗi mức chỉ chọn được một lần. Mức càng cao, câu hỏi càng khó.</p>
+      <div class="levels" id="levels"></div>
+    </div>
+
+    <!-- Câu hỏi -->
+    <div class="screen" id="sQuestion" hidden>
+      <div class="q-top">
+        <div>
+          <div class="q-tag" id="qTag"></div>
+          <div class="q-sub" id="qSub"></div>
+        </div>
+        <div class="score-box"><b id="qScore">0</b><span>điểm</span></div>
+      </div>
+      <p class="q-text" id="qText"></p>
+      <div class="options" id="options"></div>
+      <div class="feedback" id="feedback" hidden>
+        <strong id="fbTitle"></strong>
+        <p id="fbText"></p>
+        <button class="btn" id="btnNext">Câu tiếp theo</button>
+      </div>
+    </div>
+
+    <!-- Kết quả -->
+    <div class="screen" id="sResult" hidden>
+      <h2 id="resTitle"></h2>
+      <div class="final-score"><span id="resScore">0</span><small> / 160 điểm</small></div>
+      <p class="lead" id="resMsg"></p>
+      <ul class="review" id="review"></ul>
+      <button class="btn" id="btnAgain">Thi lại</button>
+    </div>
+
+  </section>
+</main>
+
+<script>
+(function () {
+  "use strict";
+
+  var ROUNDS = [
+    { name: "Vòng 1 – Khởi động",
+      desc: "Bốn câu nhận biết cấu trúc và chức năng của bộ máy Golgi. Trả lời đúng được 10 điểm mỗi câu." },
+    { name: "Vòng 2 – Tăng tốc",
+      desc: "Ba câu về con đường vận chuyển protein và sự tạo thành glycoprotein. Trả lời đúng được 20 điểm mỗi câu." },
+    { name: "Vòng 3 – Về đích",
+      desc: "Ba câu cuối. Bạn chọn mức 10, 20 hoặc 30 điểm cho từng câu, mỗi mức dùng một lần." }
+  ];
+
+  var QUESTIONS = [
+    { r: 0, q: "Bộ máy Golgi có cấu trúc như thế nào?",
+      a: ["Các túi dẹp nằm song song với nhau nhưng tách rời nhau", "Hệ thống ống thông nhau thành một mạng liên tục", "Một túi hình cầu có hai lớp màng bao quanh", "Các túi nhỏ chứa enzyme phân giải nằm rải rác trong bào tương"], c: 0,
+      e: "Bộ máy Golgi gồm các túi dẹp xếp song song với nhau nhưng tách rời nhau." },
+    { r: 0, q: "Chức năng chính của bộ máy Golgi là gì?",
+      a: ["Tổng hợp ATP cung cấp năng lượng cho tế bào", "Chế biến, lắp ráp, đóng gói rồi phân phối protein và lipid", "Chứa vật chất di truyền của tế bào", "Tổng hợp protein từ các amino acid"], c: 1,
+      e: "Golgi là nơi tập trung chế biến, lắp ráp, đóng gói các phân tử protein, lipid rồi phân phối chúng đến nơi cần thiết." },
+    { r: 0, q: "Protein tổng hợp ở ribosome trên lưới nội chất hạt được gửi đến bộ máy Golgi bằng cách nào?",
+      a: ["Qua các túi vận chuyển", "Đi trực tiếp qua lỗ màng nhân", "Qua kênh protein trên màng ti thể", "Khuếch tán tự do trong bào tương"], c: 0,
+      e: "Protein được gửi từ lưới nội chất hạt đến bộ máy Golgi bằng các túi vận chuyển." },
+    { r: 0, q: "Trong tế bào, bộ máy Golgi giống bộ phận nào của một hệ thống bưu chính nhất?",
+      a: ["Kho chứa nguyên liệu", "Trung tâm phân loại, đóng gói và phân phối bưu kiện", "Nhà máy sản xuất điện", "Phòng lưu trữ hồ sơ gốc"], c: 1,
+      e: "Golgi nhận sản phẩm, chế biến, đóng gói rồi phân phối đến nơi cần thiết, giống một trung tâm phân loại và chuyển phát." },
+
+    { r: 1, q: "Tại bộ máy Golgi, protein được gắn thêm chất nào để tạo nên glycoprotein?",
+      a: ["Chuỗi lipid dài", "Các ion kim loại", "Chuỗi đường ngắn", "Các nucleotide"], c: 2,
+      e: "Chuỗi đường ngắn được gắn vào protein, tạo nên glycoprotein." },
+    { r: 1, q: "Đường đi đúng của một protein cần xuất ra khỏi tế bào là:",
+      a: ["Golgi → ribosome → lưới nội chất hạt → màng tế bào", "Lưới nội chất hạt → túi vận chuyển → Golgi → túi vận chuyển → màng tế bào", "Màng tế bào → Golgi → lưới nội chất hạt → ribosome", "Ribosome → ti thể → Golgi → màng tế bào"], c: 1,
+      e: "Protein được tổng hợp ở ribosome trên lưới nội chất hạt, theo túi vận chuyển đến Golgi, được chế biến, đóng gói trong túi vận chuyển rồi xuất ra ngoài qua màng tế bào." },
+    { r: 1, q: "Sau khi được bao gói trong túi vận chuyển, sản phẩm của Golgi có thể đi đến đâu?",
+      a: ["Chỉ nằm lại trong Golgi", "Chỉ đi vào nhân tế bào", "Các vị trí khác trong tế bào hoặc ra ngoài qua màng tế bào", "Chỉ đi vào ti thể"], c: 2,
+      e: "Các túi vận chuyển đưa sản phẩm đến những vị trí khác nhau trong tế bào hoặc xuất ra ngoài qua màng tế bào." },
+
+    { r: 2, level: 10, q: "Ngoài protein, bộ máy Golgi còn chế biến và đóng gói loại phân tử nào?",
+      a: ["Lipid", "DNA", "Tinh bột", "RNA"], c: 0,
+      e: "Golgi chế biến, lắp ráp, đóng gói cả protein lẫn lipid." },
+    { r: 2, level: 20, q: "Nếu bộ máy Golgi của một tế bào ngừng hoạt động, hậu quả hợp lý nhất là gì?",
+      a: ["Ribosome không còn tổng hợp được protein", "Tế bào ngừng hô hấp tế bào ngay lập tức", "Protein từ lưới nội chất hạt không được chế biến, đóng gói và phân phối đúng nơi", "DNA không thể nhân đôi"], c: 2,
+      e: "Golgi là trạm chế biến, đóng gói và phân phối. Khi trạm này hỏng, protein đến từ lưới nội chất hạt không được hoàn thiện và đưa đến đúng vị trí." },
+    { r: 2, level: 30, q: "Phát biểu nào sau đây KHÔNG đúng về bộ máy Golgi?",
+      a: ["Gồm các túi dẹp nằm song song với nhau", "Là nơi gắn chuỗi đường ngắn vào protein để tạo glycoprotein", "Các túi dẹp thông liền nhau thành một khối liên tục, không tách rời", "Đóng gói sản phẩm vào túi vận chuyển để phân phối"], c: 2,
+      e: "Các túi dẹp của Golgi nằm song song nhưng tách rời nhau, không thông liền thành khối liên tục." }
+  ];
+
+  function $(id) { return document.getElementById(id); }
+  function shuffle(arr) {
+    var a = arr.slice();
+    for (var i = a.length - 1; i > 0; i--) {
+      var j = Math.floor(Math.random() * (i + 1));
+      var t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
+  }
+  var screens = ["sIntro", "sRound", "sLevel", "sQuestion", "sResult"];
+  function show(id) { screens.forEach(function (s) { $(s).hidden = (s !== id); }); }
+
+  var S;
+  function reset() {
+    S = { pos: 0, score: 0, results: [], usedLevels: [], current: null, locked: false, level: 0, picked: [] };
+  }
+
+  function drawClimb() {
+    var t = $("climbTrack");
+    t.innerHTML = "";
+    for (var i = 0; i < QUESTIONS.length; i++) {
+      if (i > 0) {
+        var l = document.createElement("div");
+        l.className = "link" + ((i === 4 || i === 7) ? " gap" : "");
+        t.appendChild(l);
+      }
+      var n = document.createElement("div");
+      n.className = "node";
+      var res = S.results[i];
+      if (res) n.classList.add(res.ok ? "right" : "wrong");
+      else if (i === S.pos) n.classList.add("now");
+      n.textContent = i + 1;
+      t.appendChild(n);
+    }
+    $("climb").hidden = false;
+  }
+
+  function startGame() { reset(); nextStep(); }
+
+  function nextStep() {
+    if (S.pos >= QUESTIONS.length) return finish();
+    var r = QUESTIONS[S.pos].r;
+    var prev = S.pos === 0 ? -1 : QUESTIONS[S.pos - 1].r;
+    drawClimb();
+    if (r !== prev) {
+      $("rTitle").textContent = ROUNDS[r].name;
+      $("rDesc").textContent = ROUNDS[r].desc;
+      show("sRound");
+      $("btnRoundGo").focus();
+    } else beginQuestion();
+  }
+
+  function beginQuestion() {
+    if (QUESTIONS[S.pos].r === 2) return showLevels();
+    askQuestion(QUESTIONS[S.pos]);
+  }
+
+  function showLevels() {
+    var box = $("levels");
+    box.innerHTML = "";
+    [10, 20, 30].forEach(function (lv) {
+      var b = document.createElement("button");
+      b.className = "level";
+      b.type = "button";
+      b.disabled = S.usedLevels.indexOf(lv) !== -1;
+      b.innerHTML = lv + "<small>điểm</small>";
+      b.addEventListener("click", function () {
+        S.usedLevels.push(lv);
+        var q = QUESTIONS.filter(function (x) { return x.r === 2 && x.level === lv; })[0];
+        askQuestion(q, lv);
+      });
+      box.appendChild(b);
+    });
+    show("sLevel");
+    var first = box.querySelector("button:not(:disabled)");
+    if (first) first.focus();
+  }
+
+  function askQuestion(q, level) {
+    S.current = q;
+    S.level = level || 0;
+    S.locked = false;
+
+    $("qTag").textContent = ROUNDS[q.r].name.split(" – ")[1] + " · Câu " + (S.pos + 1) + "/" + QUESTIONS.length;
+    $("qSub").textContent = q.r === 0 ? "10 điểm" : q.r === 1 ? "20 điểm" : "Mức " + level + " điểm";
+    $("qScore").textContent = S.score;
+    $("qText").textContent = q.q;
+    $("feedback").hidden = true;
+
+    S.picked = shuffle(q.a.map(function (txt, idx) { return { txt: txt, ok: idx === q.c }; }));
+    var box = $("options");
+    box.innerHTML = "";
+    S.picked.forEach(function (opt, i) {
+      var b = document.createElement("button");
+      b.type = "button";
+      b.className = "opt";
+      b.innerHTML = '<span class="letter">' + "ABCD"[i] + '</span><span></span>';
+      b.lastChild.textContent = opt.txt;
+      b.addEventListener("click", function () { answer(i); });
+      box.appendChild(b);
+    });
+
+    show("sQuestion");
+    drawClimb();
+  }
+
+  function pointsFor(ok) {
+    if (!ok) return 0;
+    var r = S.current.r;
+    return r === 0 ? 10 : r === 1 ? 20 : S.level;
+  }
+
+  function answer(i) {
+    if (S.locked) return;
+    S.locked = true;
+    var ok = S.picked[i].ok;
+    var pts = pointsFor(ok);
+    S.score += pts;
+    S.results[S.pos] = { ok: ok, pts: pts, q: S.current.q, a: S.current.a[S.current.c] };
+
+    $("options").querySelectorAll(".opt").forEach(function (b, idx) {
+      b.disabled = true;
+      if (S.picked[idx].ok) b.classList.add("correct");
+      else if (idx === i) b.classList.add("incorrect");
+      else b.classList.add("dim");
+    });
+
+    $("qScore").textContent = S.score;
+    var fb = $("feedback");
+    fb.className = "feedback " + (ok ? "ok" : "no");
+    $("fbTitle").textContent = ok ? "Chính xác! +" + pts + " điểm" : "Chưa đúng. +0 điểm";
+    $("fbText").textContent = S.current.e;
+    $("btnNext").textContent = S.pos === QUESTIONS.length - 1 ? "Xem kết quả" : "Câu tiếp theo";
+    fb.hidden = false;
+    drawClimb();
+    $("btnNext").focus();
+  }
+
+  function next() { S.pos++; nextStep(); }
+
+  function finish() {
+    var correct = S.results.filter(function (r) { return r && r.ok; }).length;
+    var title, msg;
+    if (S.score >= 140) { title = "Bộ máy Golgi thực thụ!"; msg = "Sản phẩm nào cũng được phân phối đúng nơi. Kiến thức của bạn rất vững."; }
+    else if (S.score >= 95) { title = "Đóng gói gần hoàn chỉnh"; msg = "Bạn nắm chắc phần lớn kiến thức. Xem lại các câu sai để hoàn thiện."; }
+    else if (S.score >= 50) { title = "Đang ở lưới nội chất"; msg = "Bạn đã hiểu những ý cơ bản. Đọc lại phần cấu trúc và chức năng của Golgi rồi thi lại nhé."; }
+    else { title = "Mới ở ribosome"; msg = "Hãy đọc lại bài về bộ máy Golgi rồi thử lại. Lần sau sẽ tốt hơn."; }
+    $("resTitle").textContent = title;
+    $("resScore").textContent = S.score;
+    $("resMsg").textContent = "Đúng " + correct + "/" + QUESTIONS.length + " câu. " + msg;
+
+    var ul = $("review");
+    ul.innerHTML = "";
+    S.results.forEach(function (r, idx) {
+      var li = document.createElement("li");
+      var mk = document.createElement("span");
+      mk.className = "mk " + (r.ok ? "ok" : "no");
+      mk.textContent = r.ok ? "Đúng" : "Sai";
+      var body = document.createElement("span");
+      body.textContent = "Câu " + (idx + 1) + ": " + r.q + " Đáp án: " + r.a;
+      var pt = document.createElement("span");
+      pt.className = "pt";
+      pt.textContent = "+" + r.pts;
+      li.appendChild(mk); li.appendChild(body); li.appendChild(pt);
+      ul.appendChild(li);
+    });
+    drawClimb();
+    show("sResult");
+    window.scrollTo({ top: 0 });
+  }
+
+  $("btnStart").addEventListener("click", startGame);
+  $("btnRoundGo").addEventListener("click", beginQuestion);
+  $("btnNext").addEventListener("click", next);
+  $("btnAgain").addEventListener("click", function () { $("climb").hidden = true; startGame(); });
+
+  document.addEventListener("keydown", function (e) {
+    if ($("sQuestion").hidden) return;
+    var k = e.key.toLowerCase();
+    var idx = "abcd".indexOf(k);
+    if (idx === -1 && k >= "1" && k <= "4") idx = Number(k) - 1;
+    if (idx > -1 && !S.locked) answer(idx);
+  });
+
+  reset();
+})();
+</script>
+</body>
+</html>
