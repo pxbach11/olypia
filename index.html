@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Đường lên đỉnh – Quá khứ đơn &amp; Quá khứ tiếp diễn</title>
+<style>
+:root{--bg1:#071a52;--bg2:#020b2b;--gold:#ffc83d;--gold2:#ffe38a;--panel:#0d2a7a;--line:#3f6bff;--ok:#27d17f;--bad:#ff5a5f;--text:#f4f7ff}
+*{box-sizing:border-box;margin:0}
+html,body{min-height:100%}
+body{font-family:"Trebuchet MS","Segoe UI",Arial,sans-serif;color:var(--text);background:radial-gradient(ellipse at 50% 0%,#1b3fb5 0%,var(--bg1) 40%,var(--bg2) 100%) fixed;display:flex;justify-content:center;padding:20px 14px 40px}
+.wrap{width:100%;max-width:780px}
+h1{font-size:clamp(22px,5vw,34px);text-align:center;color:var(--gold);letter-spacing:.5px;text-shadow:0 0 18px rgba(255,200,61,.45)}
+.sub{text-align:center;color:#b9c7ff;margin:6px 0 18px}
+.track{display:flex;gap:5px;margin-bottom:18px}
+.track i{flex:1;height:10px;border-radius:6px;background:#1a2f78;border:1px solid #2a45a0}
+.track i.done{background:var(--gold);border-color:var(--gold2);box-shadow:0 0 8px rgba(255,200,61,.7)}
+.track i.now{background:#fff;border-color:#fff}
+.track i.wrong{background:var(--bad);border-color:var(--bad)}
+.card{background:linear-gradient(180deg,#123596,var(--panel));border:2px solid var(--line);border-radius:18px;padding:22px 20px;box-shadow:0 0 0 3px #071a52,0 0 28px rgba(63,107,255,.45)}
+.tag{display:inline-block;background:var(--gold);color:#3a2a00;font-weight:700;border-radius:999px;padding:4px 14px;font-size:14px}
+.tag.alt{background:#8fb0ff;color:#08215f;margin-left:8px}
+.q{font-size:clamp(19px,4.2vw,25px);line-height:1.45;margin:16px 0 20px;font-weight:700}
+.opts{display:grid;gap:10px}
+.opt{display:flex;align-items:center;gap:12px;text-align:left;width:100%;font:inherit;font-size:18px;color:var(--text);background:#0a2169;border:2px solid var(--line);border-radius:999px;padding:12px 18px;cursor:pointer;transition:background .15s,border-color .15s,transform .1s}
+.opt:hover:not(:disabled){background:#173a9c;transform:translateX(3px)}
+.opt:focus-visible,.btn:focus-visible,input:focus-visible{outline:3px solid var(--gold2);outline-offset:2px}
+.opt b{flex:none;width:34px;height:34px;border-radius:50%;background:var(--gold);color:#3a2a00;display:grid;place-items:center}
+.opt.ok{background:#0e6b44;border-color:var(--ok)}
+.opt.no{background:#7a1d28;border-color:var(--bad)}
+.opt:disabled{cursor:default}
+.ans{display:flex;gap:10px;flex-wrap:wrap}
+input[type=text]{flex:1;min-width:200px;font:inherit;font-size:18px;padding:12px 18px;border-radius:999px;border:2px solid var(--line);background:#0a2169;color:var(--text)}
+.btn{font:inherit;font-weight:700;font-size:17px;border:0;border-radius:999px;padding:12px 26px;cursor:pointer;background:var(--gold);color:#3a2a00;box-shadow:0 4px 0 #b88a10}
+.btn:active{transform:translateY(2px);box-shadow:0 2px 0 #b88a10}
+.btn:disabled{opacity:.5;cursor:default}
+.fb{margin-top:18px;padding:14px 16px;border-radius:12px;background:#07194f;border-left:5px solid var(--line);line-height:1.5;display:none}
+.fb.ok{border-color:var(--ok);display:block}
+.fb.no{border-color:var(--bad);display:block}
+.fb strong{display:block;margin-bottom:4px;font-size:18px}
+.next{margin-top:16px;text-align:right;display:none}
+.center{text-align:center}
+.score{font-size:64px;color:var(--gold);font-weight:800;margin:10px 0;text-shadow:0 0 22px rgba(255,200,61,.6)}
+.review{text-align:left;margin-top:16px;display:grid;gap:8px;font-size:15px}
+.review div{background:#07194f;border-radius:10px;padding:10px 12px}
+.review .r-ok{border-left:5px solid var(--ok)}
+.review .r-no{border-left:5px solid var(--bad)}
+.note{color:#b9c7ff;font-size:15px;line-height:1.6;margin:14px 0 20px}
+@media (prefers-reduced-motion:reduce){*{transition:none!important}}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>ĐƯỜNG LÊN ĐỈNH</h1>
+  <p class="sub">Thì quá khứ đơn &amp; Quá khứ tiếp diễn · 15 câu · Không giới hạn thời gian</p>
+  <div class="track" id="track" aria-label="Tiến độ"></div>
+  <main class="card" id="card"></main>
+</div>
+<script>
+const QS=[
+{t:"mc",q:"Yesterday I ___ to the market with my mother.",o:["go","went","was going","goes"],a:1,e:"“Yesterday” là dấu hiệu quá khứ đơn. Go → went (động từ bất quy tắc)."},
+{t:"mc",q:"She ___ TV when I called her.",o:["watched","watches","was watching","is watching"],a:2,e:"Hành động đang diễn ra thì bị cắt ngang → quá khứ tiếp diễn: was/were + V-ing."},
+{t:"mc",q:"They ___ football last Sunday.",o:["played","play","were play","are playing"],a:0,e:"“Last Sunday” → quá khứ đơn. Động từ có quy tắc thêm -ed: play → played."},
+{t:"mc",q:"While I ___ dinner, the phone rang.",o:["cooked","was cooking","cook","were cooking"],a:1,e:"Chủ ngữ “I” đi với was. Hành động đang diễn ra (cooking) bị hành động ngắn (rang) cắt ngang."},
+{t:"mc",q:"He ___ to school yesterday because he was sick.",o:["doesn't go","not went","didn't go","wasn't going"],a:2,e:"Phủ định quá khứ đơn: did not (didn't) + động từ nguyên mẫu."},
+{t:"mc",q:"What ___ you doing at 8 p.m. last night?",o:["was","were","did","are"],a:1,e:"Quá khứ tiếp diễn với “you” dùng were: What were you doing…?"},
+{t:"mc",q:"I ___ my homework when my mom came in.",o:["did","do","was doing","were doing"],a:2,e:"Hành động đang làm (doing homework) thì mẹ vào → was doing."},
+{t:"mc",q:"We ___ a movie two days ago.",o:["watch","watched","were watching","watching"],a:1,e:"“Two days ago” → quá khứ đơn: watch → watched."},
+{t:"mc",q:"At this time yesterday, we ___ English.",o:["studied","study","were studying","was studying"],a:2,e:"“At this time yesterday” chỉ một thời điểm cụ thể trong quá khứ → quá khứ tiếp diễn. “We” đi với were."},
+{t:"mc",q:"Câu nào sau đây đúng?",o:["She didn't saw him.","She didn't see him.","She not see him.","She doesn't saw him."],a:1,e:"Sau did/didn't động từ luôn ở dạng nguyên mẫu: didn't see."},
+{t:"w",q:"Điền dạng đúng của động từ: Yesterday, my mother (buy) ___ a new dress.",k:["bought"],e:"Buy là động từ bất quy tắc: buy → bought."},
+{t:"w",q:"Điền dạng đúng của động từ: The baby (sleep) ___ when I came home.",k:["was sleeping"],e:"Hành động đang diễn ra khi hành động khác xen vào → was sleeping."},
+{t:"w",q:"Điền dạng đúng của động từ: I (not/go) ___ to school last Monday.",k:["didn't go","did not go"],e:"Phủ định quá khứ đơn: didn't (did not) + go."},
+{t:"w",q:"Điền dạng đúng của động từ: They (play) ___ badminton at 5 p.m. yesterday.",k:["were playing"],e:"“At 5 p.m. yesterday” là thời điểm cụ thể → were playing."},
+{t:"w",q:"Viết lại câu thành câu phủ định: She watched TV last night.",k:["she didn't watch tv last night","she did not watch tv last night"],e:"Phủ định: S + didn't + V nguyên mẫu. Câu đúng: She didn't watch TV last night."}
+];
+const card=document.getElementById("card"),track=document.getElementById("track");
+let i=0,score=0,res=[];
+const norm=s=>s.toLowerCase().replace(/[’‘`]/g,"'").replace(/[.!]+$/,"").replace(/\s+/g," ").trim();
+const L="ABCD";
+function renderTrack(){
+  track.innerHTML=QS.map((_,n)=>`<i class="${n<res.length?(res[n]?'done':'wrong'):(n===i&&i<QS.length?'now':'')}"></i>`).join("");
+}
+function esc(s){return s.replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]))}
+function show(){
+  if(i>=QS.length)return end();
+  renderTrack();
+  const x=QS[i];
+  let h=`<span class="tag">Câu ${i+1}/${QS.length}</span><span class="tag alt">${x.t==="mc"?"Trắc nghiệm":"Tự luận"}</span><p class="q">${esc(x.q)}</p>`;
+  if(x.t==="mc"){
+    h+=`<div class="opts">`+x.o.map((o,n)=>`<button class="opt" data-n="${n}"><b>${L[n]}</b>${esc(o)}</button>`).join("")+`</div>`;
+  }else{
+    h+=`<div class="ans"><input type="text" id="inp" autocomplete="off" autocapitalize="off" spellcheck="false" placeholder="Nhập đáp án của bạn…" aria-label="Đáp án"><button class="btn" id="chk">Chốt đáp án</button></div>`;
+  }
+  h+=`<div class="fb" id="fb"></div><div class="next" id="nx"><button class="btn" id="nb">${i===QS.length-1?"Xem kết quả":"Câu tiếp theo"}</button></div>`;
+  card.innerHTML=h;
+  if(x.t==="mc")card.querySelectorAll(".opt").forEach(b=>b.onclick=()=>answerMC(+b.dataset.n));
+  else{
+    const inp=document.getElementById("inp"),chk=document.getElementById("chk");
+    chk.onclick=()=>{if(inp.value.trim())answerW(inp.value)};
+    inp.addEventListener("keydown",e=>{if(e.key==="Enter"&&inp.value.trim())answerW(inp.value)});
+    inp.focus();
+  }
+  document.getElementById("nb").onclick=()=>{i++;show()};
+}
+function feedback(ok,x,extra){
+  const fb=document.getElementById("fb");
+  fb.className="fb "+(ok?"ok":"no");
+  fb.innerHTML=`<strong>${ok?"Chính xác!":"Chưa đúng rồi!"}</strong>${extra||""}${esc(x.e)}`;
+  document.getElementById("nx").style.display="block";
+  document.getElementById("nb").focus();
+  res.push(ok);if(ok)score++;renderTrack();
+}
+function answerMC(n){
+  const x=QS[i];
+  card.querySelectorAll(".opt").forEach((b,k)=>{b.disabled=true;if(k===x.a)b.classList.add("ok");else if(k===n)b.classList.add("no")});
+  feedback(n===x.a,x,n===x.a?"":`Đáp án đúng: <b>${L[x.a]}. ${esc(x.o[x.a])}</b>. `);
+}
+function answerW(v){
+  const x=QS[i],ok=x.k.includes(norm(v));
+  document.getElementById("inp").disabled=true;document.getElementById("chk").disabled=true;
+  feedback(ok,x,ok?"":`Đáp án đúng: <b>${esc(x.k[0])}</b>. `);
+}
+function end(){
+  renderTrack();
+  const msg=score>=13?"Xuất sắc! Bạn đã lên đỉnh!":score>=9?"Khá tốt! Ôn thêm một chút nữa là chạm đỉnh.":"Cố gắng lên! Hãy đọc lại lý thuyết và thử lại nhé.";
+  card.innerHTML=`<div class="center"><span class="tag">Kết thúc</span><div class="score">${score}/${QS.length}</div><p class="q">${msg}</p>
+  <p class="note"><b>Nhớ nhanh:</b> Quá khứ đơn: S + V-ed/V2 (phủ định: didn't + V). Quá khứ tiếp diễn: S + was/were + V-ing.</p>
+  <button class="btn" id="re">Chơi lại</button></div>
+  <div class="review">`+QS.map((x,n)=>`<div class="${res[n]?'r-ok':'r-no'}">Câu ${n+1}: ${res[n]?'Đúng':'Sai'} – ${esc(x.t==='mc'?x.o[x.a]:x.k[0])}</div>`).join("")+`</div>`;
+  document.getElementById("re").onclick=()=>{i=0;score=0;res=[];show()};
+}
+show();
+</script>
+</body>
+</html>
